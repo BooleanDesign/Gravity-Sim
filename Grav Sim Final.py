@@ -21,7 +21,7 @@ Writer = animation.writers['ffmpeg']
 writer = Writer(fps=15,metadata=dict(artist='Me'),bitrate=1800)
 
 
-def animate(i,dt=0.0001):
+def animate(i,dt=0.01):
     print i
     ax.clear()
     ax.set_xlim(cloud.axes[0],cloud.axes[1])
@@ -47,13 +47,12 @@ def init():
 
 
 
-cloud = Particle_Cloud([particle(1,1000,Vector([0,0,0]),Vector([0,0,0]))]+[particle(1,1,Vector([r.gauss(0,0.6) for i in range(3)]),Vector([r.gauss(1,0.3) for i in range(3)])) for k in range(100)],constant_axes=True,
-                       init_axes=[-5,5,-5,5,-5,5])
+cloud = Particle_Cloud([particle(0.1,1,Vector([-1,0,0]),Vector([0,0,0])),particle(0.1,1,Vector([1,0,0]),Vector([0,0,0]))],init_axes=[-1,1,-1,1,-1,1])
 part_pos = [[i.x.values[0] for i in cloud.particles], [i.x.values[1] for i in cloud.particles],
                        [i.x.values[2] for i in cloud.particles]]
 fig1 = plt.figure()
 ax = fig1.add_subplot(111,projection='3d')
 ax.plot(part_pos[0],part_pos[1],part_pos[2],'o')
-ani = animation.FuncAnimation(fig1,animate,frames=1000,interval=.02,init_func=init)
+ani = animation.FuncAnimation(fig1,animate,frames=500,interval=.02,init_func=init)
 ani.save('test2.mp4',writer=writer)
 

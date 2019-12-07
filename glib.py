@@ -6,9 +6,16 @@ from astropy import constants as const
 from mpl_toolkits import mplot3d
 import matplotlib.animation as animation
 import random as r
-
+import time
 G = 1.0
 # Class Definitions
+def timer(func):
+    def wrapper(*args,**kwargs):
+        t1 = time.time()
+        x = func(*args,**kwargs)
+        t2 = time.time()
+        return t2-t1,x
+    return wrapper
 class Vector():
     """
     Defines the Vector Class for computation
@@ -99,10 +106,14 @@ class particle():
         self.x += dt * self.v
 
     def __add__(self, other):
-        print (self.m * self.v).values, (other.m * other.v).values, self.m + other.m
-        return particle(self.r + other.r, self.m + other.m, self.x,
-                        ((self.m * self.v) + (other.m * other.v)) / (self.m + other.m))
-
+        if type(self) == type(other):
+            print (self.m * self.v).values, (other.m * other.v).values, self.m + other.m
+            return particle(self.r + other.r, self.m + other.m, self.x,
+                            ((self.m * self.v) + (other.m * other.v)) / (self.m + other.m))
+        else:
+            return self
+    def __radd__(self,other):
+        return self.__add__(other)
     def distance(self, other):
         return abs(self.x - other.x)
 
@@ -144,8 +155,8 @@ class Particle_Cloud():
         self.com = (1 / sum([i.m for i in particles])) * (
             sum([i.m * i.x for i in particles]))  # Defines the center of mass
         self.ang_mom = sum([self.com.cross(i.m * i.v) for i in self.particles])
-
-    def update(self, dt=0.01):
+    @timer
+    def update2(self, dt=0.01):
         part_sims = []
         """
         Removing merged particles
@@ -168,6 +179,53 @@ class Particle_Cloud():
         for i in new_particles:
             self.particles.append(i)
 
+        """
+        Updating particles
+        """
+        parts = copy.deepcopy(self.particles)
+        for part in parts:
+            force = gravitational_force(part, parts)
+            self.particles[parts.index(part)].update(dt, force)
+        if self.constant_axes == True:
+            try:
+                self.axes = self.init_axes
+            except:
+                self.axes = [-2, 2, -2, 2, -2, 2]
+        else:
+            self.axes = [(2.0 - self.axes_param) * min([i.x.values[0] for i in self.particles]),
+                         self.axes_param * max([i.x.values[0] for i in self.particles]),
+                         (2.0 - self.axes_param) * min([i.x.values[1] for i in self.particles]),
+                         self.axes_param * max([i.x.values[1] for i in self.particles]),
+                         (2.0 - self.axes_param) * min([i.x.values[2] for i in self.particles]),
+                         self.axes_param * max([i.x.values[2] for i in self.particles])]
+        if (self.axes[1] - self.axes[0]) * (self.axes[3] - self.axes[2]) * (self.axes[5] - self.axes[4]) < 2.0:
+            self.axes = [-2, 2, -2, 2, -2, 2]
+        self.lin_mom = sum([i.m * i.v for i in self.particles])  # Defines the linear momentum vector
+        self.com = (1 / sum([i.m for i in self.particles])) * (
+            sum([i.m * i.x for i in self.particles]))  # Defines the center of mass
+        self.ang_mom = sum([self.com.cross(i.m * i.v) for i in self.particles])
+    @timer
+    def update(self, dt=0.01):
+        part_sims = []
+        """
+        Removing merged particles
+        """
+        new_particles = []
+        removable_particles = []
+        for p in range(len(self.particles)): #This allows iteration through the whole list of particles
+            temp_removable_particles = []
+            distances = [self.particles[p].distance(i) <= (self.particles[p].r+i.r) for i in self.particles[p+1:]]
+            print distances
+            if True in distances:
+                temp_removable_particles = [self.particles[p]]
+                temp_removable_particles += [self.particles[(p+1)+i] for i in range(len(self.particles[p+1:])) if distances[i] == True] #Checks to see if a given particle is in the distances list
+            new_particles.append(sum(temp_removable_particles))
+            removable_particles += temp_removable_particles
+        for particle in removable_particles:
+            self.particles.remove(particle)
+        for particle in new_particles:
+            if type(particle) != int: #Checks that the sumation did not yield a zero value.
+                self.particles.append(particle)
         """
         Updating particles
         """
@@ -205,3 +263,23 @@ def gravitational_force(i, n):
     w = [b for b in n if i != b] #takes all the objects in b except for those in n
     f = 1.0 * i.m * float(G) * sum([j.m * ((j.x - i.x).unit()) / (abs(j.x - i.x) ** 2) for j in w]) #Returns the net force on the particle
     return f
+
+if __name__ == '__main__':
+    h = range(1,100)
+    t1 = []
+    t2 = []
+    for number in h:
+        print number
+        t = []
+        g = Particle_Cloud([particle(0.1,1,Vector([r.gauss(0,2) for i in range(3)]),Vector([0,0,0])) for k in range(number)],init_axes=[-1,1,-1,1,-1,1])
+        for l in range(10):
+            t.append(g.update()[0])
+        t1.append(sum(t)/len(t))
+        t = []
+        g = Particle_Cloud([particle(0.1,1,Vector([r.gauss(0,2) for i in range(3)]),Vector([0,0,0])) for k in range(number)],init_axes=[-1,1,-1,1,-1,1])
+        for l in range(10):
+            t.append(g.update2()[0])
+        t2.append(sum(t)/len(t))
+    plt.plot(h,t1)
+    plt.plot(h,t2,'b')
+    plt.show()
