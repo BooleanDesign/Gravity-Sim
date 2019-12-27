@@ -113,6 +113,7 @@ class Particle_Cloud():
     Defines the aggregate particle cloud. This object consists of a group of particles.
     """
 
+
     def __init__(self, particles, axes_parameter=1.1, size_parameter=0.03, constant_axes=True, init_axes=None):
         """
         Initiates the class with list parameter of particles

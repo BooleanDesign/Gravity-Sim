@@ -55,5 +55,6 @@ fig1 = plt.figure()
 ax = fig1.add_subplot(111,projection='3d')
 ax.plot(part_pos[0],part_pos[1],part_pos[2],'o')
 ani = animation.FuncAnimation(fig1,animate,frames=3000,interval=.02,init_func=init)
+
 ani.save('test2.mp4',writer=writer)
 
