@@ -1,15 +1,13 @@
 # Imports
-import numpy as np
 import copy
-import matplotlib.pyplot as plt
-from astropy import constants as const
-from mpl_toolkits import mplot3d
-import matplotlib.animation as animation
-import random as r
+
+import numpy as np
 
 G = 1.0
+
+
 # Class Definitions
-class Vector():
+class Vector:
     """
     Defines the Vector Class for computation
     """
@@ -73,7 +71,7 @@ class Vector():
                                       [other.values[1], other.values[2]]])])
 
 
-class particle():
+class Particle:
     """
 
     Initiates the particle class, which acts as a shaped point particle with typical physical properties
@@ -100,7 +98,7 @@ class particle():
 
     def __add__(self, other):
         print (self.m * self.v).values, (other.m * other.v).values, self.m + other.m
-        return particle(self.r + other.r, self.m + other.m, self.x,
+        return Particle(self.r + other.r, self.m + other.m, self.x,
                         ((self.m * self.v) + (other.m * other.v)) / (self.m + other.m))
 
     def distance(self, other):
@@ -115,7 +113,7 @@ class Particle_Cloud():
     Defines the aggregate particle cloud. This object consists of a group of particles.
     """
 
-    def __init__(self, particles, axes_parameter=1.1, size_parameter=0.008, constant_axes=True, init_axes=None):
+    def __init__(self, particles, axes_parameter=1.1, size_parameter=0.03, constant_axes=True, init_axes=None):
         """
         Initiates the class with list parameter of particles
         :param particles: particle list
@@ -202,6 +200,7 @@ def gravitational_force(i, n):
     :param n: <type list(particle)> this is the particle cloud values
     :return: returns the force on the particle <Vector>
     """
-    w = [b for b in n if i != b] #takes all the objects in b except for those in n
-    f = 1.0 * i.m * float(G) * sum([j.m * ((j.x - i.x).unit()) / (abs(j.x - i.x) ** 2) for j in w]) #Returns the net force on the particle
+    w = [b for b in n if i != b]  # takes all the objects in b except for those in n
+    f = 1.0 * i.m * float(G) * sum(
+        [j.m * ((j.x - i.x).unit()) / (abs(j.x - i.x) ** 2) for j in w])  # Returns the net force on the particle
     return f
